@@ -1,8 +1,8 @@
 import os
+import time
 from os import system, name
 
-
-device_dict = {'ROUTER': '254', 'SWITCH 1': '252', 'SWITCH 2': '253', 'WEBRELAY': '240', 'NODE': '102'}
+device_dict = {'ROUTER': '254', 'SWITCH 1': '252', 'SWITCH 2': '253', 'WEBRELAY': '240', 'NODE': '101'}
 
 devices_up = {}
 
@@ -31,13 +31,15 @@ def status_display(subnet_ip):
 def mod_ping(ip_addr):
     for device, ip in device_dict.items():
         print(f"\n\nPinging {device} now...")
-        ping_stat = os.system(f"ping 10.0.{ip_addr}.{ip}")
-        if ping_stat:
-            devices_down[device] = ip
-            print("No Device Found")
-        else:
-            devices_up[device] = ip
-            print("Device Found")
+        os.system(f"ping 10.0.{ip_addr}.{ip} > ping.txt")
+        with open('ping.txt', 'r') as file:
+            data = file.read()
+            if "TTL" in data:
+                print(f'\n{device} up...')
+                devices_up[device] = ip
+            else:
+                print(f'\n{device} down...')
+                devices_down[device] = ip
     status_display(ip_addr)
 
 def intro():
@@ -46,13 +48,24 @@ def intro():
     add_subnet = input("Please enter IP subnet for module: ")
     second_switch = input("\nIs there 2 managed switches in this module? [y/n]: ")
     if second_switch == "y":
-        mod_ping(add_subnet)
+        pass
     elif second_switch == "n":
         for device in device_dict.copy():
             if device_dict[device] == '253':
-                del device_dict[device]
-                mod_ping(add_subnet)
+                del device_dict[device]  
     else:
         print("Please enter Y or N")
-        
+    
+    which_node = input("\nDoes this have a Orin Node? [y/n]: ")
+    if which_node == "y":
+        for device, ip in device_dict.items():
+            if device == 'NODE':
+                device_dict[device] = '102'
+    elif which_node == "n":
+        pass
+    else:
+        print("Please enter Y or N")
+    
+    mod_ping(add_subnet)
+    
 intro() 
